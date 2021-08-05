@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRUD API REST AXIOS</title>
+</head>
+
+<body>
+  <h1>CRUD API REST AXIOS</h1>
+  <section class="crud">
+    <article>
+      <h2 class="crud-title">Agregar Santos</h2>
+      <form action="" class="crud-form">
+        <input type="text" name="nombre" placeholder="Nombre" required>
+        <br>
+        <input type="text" name="constelacion" placeholder="Constelación" required>
+        <br>
+        <input type="submit" value="Enviar">
+        <input type="hidden" name="id">
+      </form>
+    </article>
+    <article>
+      <h2>Ver Santos</h2>
+      <table class="crud-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Constelación</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </article>
+  </section>
+  <template id="crud-template">
+    <tr>
+      <td class="name"></td>
+      <td class="constellation"></td>
+      <td>
+        <button class="edit">Editar</button>
+        <button class="delete">Eliminar</button>
+      </td>
+    </tr>
+  </template>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const d = document,
+      $table = d.querySelector(".crud-table"),
+      $form = d.querySelector(".crud-form"),
+      $title = d.querySelector(".crud-title"),
+      $template = d.getElementById("crud-template").content,
+      $fragment = d.createDocumentFragment();
+
+    const getAll = async () => {
+      try {
+        let res = await axios.get("http://localhost:5555/santos"),
+          json = await res.data;
+
+        json.forEach(el => {
+          $template.querySelector(".name").textContent = el.nombre;
+          $template.querySelector(".constellation").textContent = el.constelacion;
+
+          $template.querySelector(".edit").dataset.id = el.id;
+          $template.querySelector(".edit").dataset.name = el.nombre;
+          $template.querySelector(".edit").dataset.constellation = el.constelacion;
+          $template.querySelector(".delete").dataset.id = el.id;
+
+          let $clone = d.importNode($template, true);
+          $fragment.appendChild($clone);
+        })
+        $table.querySelector("tbody").appendChild($fragment);
+
+      } catch (err) {
+        //console.log("Estamos en el catch", err.response);
+        let message = err.response.statusText || "Ocurrio un error";
+        $table.insertAdjacentHTML("afterend", `Error ${err.response.status}: ${message}`);
+      } finally {
+        //console.log("Esto se ejecutara independientemente de lo que suceda");
+      }
+    }
+    d.addEventListener("DOMContentLoaded", getAll);
+
+    d.addEventListener("submit", async (e) => {
+      if (e.target === $form) {
+        e.preventDefault();
+        console.log("Estoy en Enviar")
+        if (!e.target.id.value) {
+          //Estamos en POST
+
+          try {
+            let options = {
+              method: "POST",
+              headers: {
+                "Content-type": "application/json; charset=utf-8"
+              },
+              data: JSON.stringify({
+                nombre: e.target.nombre.value,
+                constelacion: e.target.constelacion.value
+              })
+            };
+            //Envio de datos usando Fetch
+            res = await axios("http://localhost:5555/santos", options);
+            // si no hay error recargamos la pagina para mostrar la lista actualizada
+            location.reload();
+
+          } catch (err) {
+            let message = err.response.statusText || "Ocurrio un error";
+            $table.insertAdjacentHTML("afterend", `Error ${err.response.status}: ${message}`);
+          } finally {
+
+          }
+        }
+        else {
+          //Estamos en PUT
+          try {
+            //Opciones quue recibe fetch para el envio post
+            let options = {
+              method: "PUT",
+              headers: {
+                "Content-type": "application/json; charset=utf-8"
+              },
+              data: JSON.stringify({
+                nombre: e.target.nombre.value,
+                constelacion: e.target.constelacion.value
+              })
+            };
+            //Envio de datos usando Axios
+            res = await axios(`http://localhost:5555/santos/${e.target.id.value}`, options);
+            // consultamos si hay algun error en el envio
+
+            // si no hay error recargamos la pagina para mostrar la lista actualizada
+            location.reload();
+
+          } catch (err) {
+            let message = err.statustext || "Ha ocurrido un error";
+            $table.insertAdjacentHTML("afterend", `Error ${err.status}: ${message}`);
+          } finally {
+
+          }
+        }
+      }
+    })
+
+    d.addEventListener("click", async (e) => {
+      if (e.target.matches(".edit")) {
+        console.log("estamos en", e.target.edit);
+        $title.textContent = "Editar Santo";
+        // $form.nombre.value = e.target.attributes[2].value;
+        // $form.constelacion.value = e.target.attributes[3].value;
+        // $form.id.value = e.target.attributes[1].value;
+        $form.nombre.value = e.target.dataset.name;
+        $form.constelacion.value = e.target.dataset.constellation;
+        $form.id.value = e.target.dataset.id;
+      }
+
+      if (e.target.matches(".delete")) {
+        let isDelete = confirm(`Estas Seguro de eliminar el id: ${e.target.dataset.id}?`)
+        if (isDelete) {
+
+          try {
+            let options = {
+              method: "DELETE",
+              headers: {
+                "Content-type": "application/json; charset=utf-8"
+              }
+            }
+            //Envio de datos usando Fetch DELETE
+            res = await axios(`http://localhost:5555/santos/${e.target.dataset.id}`, options);
+            // consultamos si hay algun error en el envio
+
+            // si no hay error recargamos la pagina para mostrar la lista actualizada
+            location.reload();
+
+          } catch (err) {
+            let message = err.statustext || "Ha ocurrido un error";
+            $table.insertAdjacentHTML("afterend", `Error ${err.status}: ${message}`);
+          } finally {
+
+          }
+        }
+      }
+    })
+  </script>
+</body>
+
+</html>

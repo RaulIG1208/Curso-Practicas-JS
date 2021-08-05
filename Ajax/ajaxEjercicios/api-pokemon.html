@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokemon</title>
+  <style>
+    .grid-fluida {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      text-align: center;
+    }
+
+    .grid-fluida img {
+      width: 100%;
+      height: auto;
+    }
+
+    .loader {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      max-width: 500px;
+      height: auto;
+    }
+
+    a {
+      text-decoration: none;
+      font-weight: bold;
+      color: #000;
+      transition: all 0.3s ease-out;
+    }
+
+    a:hover {
+      opacity: 0.8;
+      transform: scale(1.3);
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Pokemons</h1>
+  <nav class="links"></nav>
+  <main class="grid-fluida"></main>
+  <script>
+    const d = document,
+      $main = d.querySelector(".grid-fluida"),
+      $links = d.querySelector(".links");
+    let pokeAPI = "https://pokeapi.co/api/v2/pokemon/"
+    async function loadPokemons(url) {
+      try {
+        $main.innerHTML = `<img src="./assets/spinning-circles.svg" alt="Cargando..." class="loader">`;
+
+        let res = await fetch(url),
+          json = await res.json(),
+          $template = "",
+          $prevLink,
+          $nextLink;
+
+        console.log(json);
+
+        if (!res.ok) throw { status: res.status, statusText: res.statusText }
+
+        let results = json.results;
+        // iniciamos un for para pasar por cada pokemon del arreglo y guardarlo para luego pintarlo en pantalla
+        for (let i = 0; i < results.length; i++) {
+          let el = results[i];
+          try {
+            let res = await fetch(el.url),
+              pokemon = await res.json();
+            //console.log(res, pokemon);
+
+            if (!res.ok) throw { status: res.status, statusText: res.statusText }
+
+            $template += `
+            <figure>
+              <img src="${pokemon.sprites.other.dream_world.front_default}" alt="${pokemon.name}" class="pokemon">
+              <figcaption>${pokemon.name}</figcaption>
+              </figure>
+            `;
+
+          } catch (err) {
+            //console.log(err);
+            let message = err.statusText || "Ocurrio un error";
+            $template += `
+            <figcaption>Error ${err.status}: ${message} </figcaption>`;
+          }
+
+        }
+        $main.innerHTML = $template;
+
+        $nextLink = json.next ? `<a href="${json.next}" class="link">Next</a>` : "";
+        $prevLink = json.previous ? `<a href="${json.previous}" class="link">Prev</a>` : "";
+        $links.innerHTML = $prevLink + " " + $nextLink;
+      } catch (err) {
+        console.log(err);
+        let message = err.statusText || "Ocurrio un error";
+        $main.innerHTML = `Error ${err.status}: ${message}`;
+      }
+    }
+
+    d.addEventListener("DOMContentLoaded", (e => loadPokemons(pokeAPI)));
+    d.addEventListener("click", (e) => {
+      if (e.target.matches(".link")) {
+        e.preventDefault();
+        loadPokemons(e.target.href);
+      }
+    })
+  </script>
+</body>
+
+</html>

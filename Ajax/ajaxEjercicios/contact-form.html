@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Envio de Formulario con Fetch</title>
+  <style>
+    html {
+      box-sizing: border-box;
+      font-family: sans-serif;
+      font-size: 16px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .seccion {
+      display: flex;
+      width: 100%;
+      max-width: 1024px;
+      min-height: 100%;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+      flex-direction: column;
+      justify-content: center;
+      align-content: center;
+    }
+
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+
+      border: thin solid #000;
+      min-width: 100%;
+    }
+
+    .contact-form legend {
+      font-weight: bold;
+      font-size: 1.5rem;
+      padding: 1rem 0;
+    }
+
+    .contact-form input {
+      display: block;
+      width: 80%;
+      margin: 1rem 0.5rem;
+      padding: 0.5rem 0;
+      font-family: inherit;
+      font-size: 1rem;
+
+    }
+
+    .contact-form textarea {
+      display: block;
+      font-size: 1rem;
+      font-family: sans-serif;
+      resize: none;
+      width: 80%;
+    }
+
+    .contact-form input[type=submit] {
+      width: 30%;
+    }
+
+    .contact-form input[type="submit"] {
+      font-weight: bold;
+      width: 50%;
+      cursor: pointer;
+    }
+
+    /* .contact-form > *::placeholder {
+  color: #000;
+} */
+
+    .contact-form [required]:valid {
+      border: thin solid rgba(91, 240, 91, 0.7);
+      ;
+    }
+
+    .contact-form [required]:invalid {
+      border: thin solid rgba(200, 10, 10, 0.7);
+    }
+
+    .contact-form-error {
+      margin-top: -1rem;
+      font-size: 80%;
+      background-color: rgba(200, 10, 10, 0.7);
+      ;
+      color: #fff;
+      transition: all 800ms ease;
+    }
+
+    .contact-form-error.is-active {
+      display: block;
+      animation: show-message 1s 1 normal 0s ease-out both;
+    }
+
+    .none {
+      display: none;
+    }
+
+    @keyframes show-message {
+      0% {
+        visibility: hidden;
+        opacity: 0;
+      }
+
+      100% {
+        visibility: visible;
+        opacity: 1;
+      }
+    }
+
+
+    .none {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <section class="seccion">
+    <h1>Envio de Formulario con Fetch</h1>
+    <form class="contact-form">
+      <legend>Envia tus comentarios</legend>
+      <input type="text" name="name" placeholder="Introduce tu nombre" title="Solo acepta letras y espacios" required
+        pattern="^[A-Za-zÑñÁáÉéÍíÓóÚúÜü\s]+$">
+      <input type="email" name="email" placeholder="Introduce tu email" title="Colocar una secuencia de correro valida"
+        required pattern="^[a-z0-9]+(\.[_a-z0-9]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,15})$">
+      <input type="text" name="asunto" placeholder="Introduce el asunto" title="Este parametro es requerido" required>
+      <textarea name="coment" cols="50" rows="5" required placeholder="Indica tus comentarios" data-pattern="^.{1,255}$"
+        title="Tu comentario no puede exceder los 255 caracteres"></textarea>
+      <input type="submit" value="Enviar">
+      <div class="contact-form-loader none">
+        <img src="./assets/spinning-circles.svg" alt="Cargando">
+      </div>
+      <div class="contact-form-response"></div>
+    </form>
+  </section>
+  <script>
+    const d = document;
+
+    function contactForm() {
+      const $form = d.querySelector(".contact-form"),
+        $inputs = d.querySelectorAll(".contact-form [required]");
+      //console.log($input);
+
+      $inputs.forEach(input => {
+        const $span = d.createElement("span")
+        $span.id = input.name;
+        $span.textContent = input.title;
+        $span.classList.add("contact-form-error", "none");
+        input.insertAdjacentElement("afterend", $span);
+      })
+
+      d.addEventListener("keyup", (e) => {
+        if (e.target.matches(".contact-form [required]")) {
+          let $input = e.target,
+            pattern = $input.pattern || $input.dataset.pattern;
+
+          if (pattern && $input.value !== "") {
+            let regex = new RegExp(pattern);
+            return !regex.exec($input.value) ? d.getElementById($input.name).classList.add("is-active") : d.getElementById($input.name).classList.remove("is-active");
+          }
+
+          if (!pattern) {
+            return $input.value === "" ? d.getElementById($input.name).classList.add("is-active") : d.getElementById($input.name).classList.remove("is-active");
+          }
+        }
+
+      })
+
+      d.addEventListener("submit", async (e) => {
+        //e.initEvent(true);
+        if (e.target === $form) {
+          e.preventDefault()
+          console.log(e)
+          const $loader = d.querySelector(".contact-form-loader"),
+            $response = d.querySelector(".contact-form-response");
+
+          $loader.classList.remove("none");
+
+          try {
+            //Creamos las opciones que recibre fetch para el envio de datos
+            let options = {
+              method: "POST",
+              // headers: {
+              //   "Content-type": "application/json; charset=utf-8",
+              //   "Accept": "application/json"
+              // },
+              body: new FormData(e.target)
+            }
+            //Envio de datos usando Fetch
+            const res = await fetch("https://formsubmit.co/ajax/ragv1208@gmail.com", options);
+            //consultamos si hubo un error
+            if (!res.ok) throw { status: res.status, statusText: res.statusText };
+            console.log(res);
+            $loader.classList.add("none");
+            $form.reset();
+            let success = res.statusText || "Formulario enviado con exito"
+            $response.innerHTML = `<p><b>${success}</b></p>`;
+            setTimeout(() => {
+              $response.classList.add("none");
+              $response.innerHTML = "";
+            }, 3000);
+
+
+          } catch (err) {
+            let message = err.statusText || "Ocurrio un error";
+            $response.innerHTML = `<p><b>Error ${err.status}: ${message}</b></p>`;
+            $loader.classList.add("none");
+            $form.insertAdjacentElement("beforeend", $response);
+
+          }
+
+        }
+
+      })
+    }
+
+    d.addEventListener("DOMContentLoaded", contactForm);
+
+  </script>
+</body>
+
+</html>

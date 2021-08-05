@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Selects Aninados</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Selects Aninados</h1>
+  <label for="selec-primary">Estados</label>
+  <select name="primary" id="selec-primary">
+    <option value="">Elige un Estado</option>
+  </select>
+  <p></p>
+  <label for="selec-secundary">Municipios</label>
+  <select name="secundary" id="selec-secundary">
+    <option value="">Elige un Municipio</option>
+  </select>
+  <p></p>
+</body>
+
+<script>
+  const d = document,
+    $selecPrimary = d.getElementById("selec-primary"),
+    $selecSecundary = d.getElementById("selec-secundary");
+
+  const selectPrimary = () => {
+    fetch("https://apis.datos.gob.ar/georef/api/provincias")
+      .then(res => res.ok ? res.json() : Promise.reject(res))
+      .then(json => {
+        console.log(json)
+        $selecPrimary.innerHTML = `<option value="">Elige una Provincia</option>`;
+        json.provincias.forEach(el => {
+          $selecPrimary.innerHTML += `<option value="${el.id}">${el.nombre}</option>`;
+        })
+      })
+      .catch(err => {
+        console.log(err);
+        let message = err.statusText || "Ocurrio un error";
+        $selecPrimary.nextElementSibling.innerHTML = `Error ${err.status}: ${err.statusText}`;
+      })
+  }
+
+  const selectSecundary = (estado) => {
+    console.log(estado);
+    fetch(`https://apis.datos.gob.ar/georef/api/municipios?provincia=${estado}`)
+      .then(res => res.ok ? res.json() : Promise.reject(res))
+      .then(json => {
+        console.log(json)
+        $selecSecundary.innerHTML = `<option value="">Elige un Municipio</option>`;
+        json.municipios.forEach(el => {
+          $selecSecundary.innerHTML += `<option value="${el.id}">${el.nombre}</option>`;
+        })
+      })
+      .catch(err => {
+        console.log(err);
+        let message = err.statusText || "Ocurrio un error";
+        $selecSecundary.nextElementSibling.innerHTML = `Error ${err.status}: ${err.statusText}`;
+      })
+  }
+
+  d.addEventListener("DOMContentLoaded", selectPrimary);
+
+  $selecPrimary.addEventListener("change", (e) => selectSecundary(parseInt(e.target.value)));
+
+
+</script>
+
+</html>

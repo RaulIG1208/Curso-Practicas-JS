@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscador Shows de Tv</title>
+  <style>
+    html {
+      box-sizing: border-box;
+      font-family: sans-serif;
+      font-size: 16px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: inherit;
+    }
+
+    body {
+      text-align: center;
+    }
+
+    .grid-fluid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      max-width: 1024px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .grid-fluid img {
+      width: 100%;
+      height: auto;
+    }
+
+    .show {
+      margin: 1rem;
+    }
+
+    .loader {
+      display: block;
+      max-width: 500px;
+      height: auto;
+      margin: 1rem auto;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Buscador Shows de TV</h1>
+  <input type="search" id="search" placeholder="Buscar Shows...">
+  <sections id="shows" class="grid-fluid"></sections>
+  <template id="show-template">
+    <article class="show">
+      <h3></h3>
+      <div></div>
+      <img>
+      <a></a>
+    </article>
+  </template>
+
+  <script>
+    const d = document,
+      $shows = d.getElementById("shows"),
+      $template = d.getElementById("show-template").content,
+      $fragment = d.createDocumentFragment();
+
+    d.addEventListener("keypress", async (e) => {
+      if (e.target.matches("#search")) {
+        if (e.key === "Enter") {
+
+          try {
+            $shows.innerHTML = `<img src="./assets/spinning-circles.svg" alt="Cargando..." class="loader">`;
+
+            let search = e.target.value.toLowerCase(),
+              api = `http://api.tvmaze.com/search/shows?q=${search}`,
+              res = await fetch(api),
+              json = await res.json();
+
+            if (!res.ok) throw { status: res.status, statusText: res.statusText };
+
+            console.log(json);
+
+
+            if (json.length === 0) {
+              $shows.innerHTML = "<p><b>No se encontraron coincidencias</b></p>";
+              console.log("if");
+            } else {
+
+              json.forEach((el) => {
+
+                $template.querySelector("h3").textContent = el.show.name;
+                $template.querySelector("div").innerHTML = el.show.summary ? el.show.summary : `<p>Por el momento no hay informacion</p>`;
+                $template.querySelector("img").src = el.show.image ? el.show.image.medium : "";
+                $template.querySelector("img").alt = el.show.name;
+                $template.querySelector("a").href = el.show.url;
+                $template.querySelector("a").innerHTML = `<b>Ver ${el.show.name}</b>`;
+                let $clone = d.importNode($template, true);
+                $fragment.appendChild($clone)
+              })
+
+              $shows.innerHTML = "";
+              $shows.appendChild($fragment);
+            }
+          } catch (err) {
+            console.log(err);
+            let message = err.statusText || "Ocurrio un error";
+            $shows.innerHTML = `Error ${err.status}: ${message}`;
+          }
+        }
+      }
+    })
+  </script>
+</body>
+
+</html>
